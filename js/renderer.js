@@ -6,6 +6,11 @@ export class Renderer {
         this.ctx = canvas.getContext('2d');
         this.dpr = 1;
 
+        // Hearts animation
+        this.hearts = [];
+        this.lastHeartTime = 0;
+        this.heartInterval = 400; // ms between new hearts
+
         this.resize();
     }
 
@@ -39,7 +44,7 @@ export class Renderer {
         ctx.fillRect(0, 0, w, h);
     }
 
-    render(stars, backgroundStars, initiatorStar, phase, currentTime, connectionLines, linesFadeIn) {
+    render(stars, backgroundStars, initiatorStar, phase, currentTime, connectionLines, linesFadeIn, ansamBounds) {
         this.clear();
 
         const ctx = this.ctx;
@@ -59,9 +64,14 @@ export class Renderer {
             this.drawStar(star, currentTime, star.isActivated);
         }
 
-        // Draw initiator star
+        // Draw initiator star with name
         if (initiatorStar && phase === 'waiting') {
             this.drawInitiatorStar(initiatorStar, currentTime);
+        }
+
+        // Draw hearts around ANSAM when complete
+        if (phase === 'complete' && ansamBounds) {
+            this.updateAndDrawHearts(currentTime, ansamBounds);
         }
     }
 
@@ -194,5 +204,96 @@ export class Renderer {
         ctx.moveTo(x, y - flareLength);
         ctx.lineTo(x, y + flareLength);
         ctx.stroke();
+
+        // Draw Arabic name "سهيل" (Sohail) floating near the star
+        const floatOffset = Math.sin(pulsePhase * 0.5) * 3;
+        const isMobile = window.innerWidth < 768;
+        const fontSize = isMobile ? 14 : 16;
+
+        ctx.font = `${fontSize}px "Geeza Pro", "Arabic Typesetting", "Traditional Arabic", serif`;
+        ctx.fillStyle = `rgba(255, 250, 240, ${0.6 + pulse * 0.2})`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('سهيل', x, y + size * 3 + floatOffset);
+    }
+
+    updateAndDrawHearts(currentTime, bounds) {
+        const ctx = this.ctx;
+
+        // Add new hearts periodically
+        if (currentTime - this.lastHeartTime > this.heartInterval) {
+            this.hearts.push({
+                x: bounds.x + Math.random() * bounds.width,
+                y: bounds.y + Math.random() * bounds.height,
+                size: 8 + Math.random() * 10,
+                opacity: 0,
+                phase: 'in', // 'in', 'visible', 'out'
+                createdAt: currentTime,
+                duration: 2000 + Math.random() * 1500
+            });
+            this.lastHeartTime = currentTime;
+
+            // Limit total hearts
+            if (this.hearts.length > 15) {
+                this.hearts.shift();
+            }
+        }
+
+        // Update and draw hearts
+        this.hearts = this.hearts.filter(heart => {
+            const age = currentTime - heart.createdAt;
+            const progress = age / heart.duration;
+
+            if (progress >= 1) return false;
+
+            // Fade in for first 20%, visible for 60%, fade out for last 20%
+            if (progress < 0.2) {
+                heart.opacity = progress / 0.2;
+            } else if (progress < 0.8) {
+                heart.opacity = 1;
+            } else {
+                heart.opacity = (1 - progress) / 0.2;
+            }
+
+            // Gentle float upward
+            const floatY = heart.y - (age * 0.01);
+
+            this.drawHeart(ctx, heart.x, floatY, heart.size, heart.opacity);
+            return true;
+        });
+    }
+
+    drawHeart(ctx, x, y, size, opacity) {
+        ctx.save();
+        ctx.translate(x, y);
+
+        ctx.beginPath();
+        ctx.moveTo(0, size * 0.3);
+
+        // Left curve
+        ctx.bezierCurveTo(
+            -size * 0.5, -size * 0.3,
+            -size, size * 0.1,
+            0, size
+        );
+
+        // Right curve
+        ctx.bezierCurveTo(
+            size, size * 0.1,
+            size * 0.5, -size * 0.3,
+            0, size * 0.3
+        );
+
+        ctx.closePath();
+
+        // Soft pink/red gradient
+        const gradient = ctx.createRadialGradient(0, size * 0.4, 0, 0, size * 0.4, size);
+        gradient.addColorStop(0, `rgba(255, 150, 170, ${opacity * 0.9})`);
+        gradient.addColorStop(1, `rgba(255, 100, 130, ${opacity * 0.7})`);
+
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        ctx.restore();
     }
 }

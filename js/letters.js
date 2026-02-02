@@ -164,9 +164,23 @@ const LETTER_WIDTHS = {
 export function generateWordPositions(word, canvasWidth, canvasHeight, centerY, scale = 1, indexOffset = 0) {
     const positions = [];
 
-    // Base letter height - make it substantial
-    const letterHeight = Math.min(canvasWidth * 0.15, canvasHeight * 0.3) * scale;
-    const letterSpacing = letterHeight * 0.4;
+    // Responsive letter sizing - prioritize fitting on mobile
+    const isMobile = canvasWidth < 768;
+    const isSmallMobile = canvasWidth < 480;
+    const isLandscape = canvasWidth > canvasHeight;
+
+    let baseSize;
+    if (isSmallMobile) {
+        // Small mobile: use more of the width
+        baseSize = isLandscape ? canvasHeight * 0.28 : canvasWidth * 0.15;
+    } else if (isMobile) {
+        baseSize = isLandscape ? canvasHeight * 0.3 : canvasWidth * 0.13;
+    } else {
+        baseSize = Math.min(canvasWidth * 0.08, canvasHeight * 0.2);
+    }
+
+    const letterHeight = baseSize * scale;
+    const letterSpacing = letterHeight * (isSmallMobile ? 0.5 : isMobile ? 0.45 : 0.4);
 
     // Calculate total word width
     let totalWidth = 0;
@@ -221,19 +235,29 @@ export function getLetterConnections(char) {
 // Generate final composition with all three words
 export function generateFinalComposition(canvasWidth, canvasHeight) {
     const positions = [];
-    const scale = 0.55;
+
+    const isMobile = canvasWidth < 768;
+    const isSmallMobile = canvasWidth < 480;
+
+    // Larger scale on mobile for better visibility
+    const scale = isSmallMobile ? 0.7 : isMobile ? 0.65 : 0.55;
+
+    // Adjust vertical positions - more spread on mobile
+    const topY = isMobile ? 0.22 : 0.28;
+    const midY = 0.5;
+    const bottomY = isMobile ? 0.78 : 0.72;
 
     // Each word gets a unique offset so letterStartIndex is globally unique
     const happyCount = getWordStarCount('HAPPY');
     const birthdayCount = getWordStarCount('BIRTHDAY');
 
-    const happy = generateWordPositions('HAPPY', canvasWidth, canvasHeight, canvasHeight * 0.28, scale, 0);
+    const happy = generateWordPositions('HAPPY', canvasWidth, canvasHeight, canvasHeight * topY, scale, 0);
     positions.push(...happy);
 
-    const birthday = generateWordPositions('BIRTHDAY', canvasWidth, canvasHeight, canvasHeight * 0.5, scale, happyCount);
+    const birthday = generateWordPositions('BIRTHDAY', canvasWidth, canvasHeight, canvasHeight * midY, scale, happyCount);
     positions.push(...birthday);
 
-    const ansam = generateWordPositions('ANSAM', canvasWidth, canvasHeight, canvasHeight * 0.72, scale, happyCount + birthdayCount);
+    const ansam = generateWordPositions('ANSAM', canvasWidth, canvasHeight, canvasHeight * bottomY, scale, happyCount + birthdayCount);
     positions.push(...ansam);
 
     return positions;

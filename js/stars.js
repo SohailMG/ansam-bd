@@ -31,6 +31,9 @@ export class StarManager {
         this.connectionLines = [];
         this.linesFadeIn = 0;
 
+        // ANSAM bounds for hearts
+        this.ansamBounds = null;
+
         this.init();
     }
 
@@ -45,9 +48,11 @@ export class StarManager {
             this.stars.push(this.createStar(i, false));
         }
 
-        // Create background stars
+        // Create background stars (fewer on mobile for performance)
         this.backgroundStars = [];
-        const bgCount = Math.floor((this.width * this.height) / 15000);
+        const isMobile = this.width < 768;
+        const bgDensity = isMobile ? 25000 : 15000;
+        const bgCount = Math.floor((this.width * this.height) / bgDensity);
         for (let i = 0; i < bgCount; i++) {
             this.backgroundStars.push(this.createStar(i + totalNeeded, true));
         }
@@ -56,9 +61,13 @@ export class StarManager {
     }
 
     createStar(id, isBackground) {
-        const margin = 50;
+        const margin = 30;
         const x = margin + Math.random() * (this.width - margin * 2);
         const y = margin + Math.random() * (this.height - margin * 2);
+
+        // Adjust star sizes for mobile
+        const isMobile = this.width < 768;
+        const sizeMultiplier = isMobile ? 1.3 : 1;
 
         return {
             id,
@@ -68,14 +77,16 @@ export class StarManager {
             startY: y,
             targetX: x,
             targetY: y,
-            size: isBackground ? 0.5 + Math.random() * 1 : 1.2 + Math.random() * 1.2,
-            brightness: isBackground ? 0.15 + Math.random() * 0.25 : 0.3 + Math.random() * 0.35,
+            size: isBackground
+                ? (0.5 + Math.random() * 0.8) * sizeMultiplier
+                : (1.2 + Math.random() * 1) * sizeMultiplier,
+            brightness: isBackground ? 0.15 + Math.random() * 0.25 : 0.35 + Math.random() * 0.35,
             twinklePhase: Math.random() * Math.PI * 2,
             twinkleSpeed: 0.3 + Math.random() * 1,
             isActivated: false,
             isBackground,
             animationProgress: 1,
-            animationDuration: 1500 + Math.random() * 1000, // Faster: 1.5-2.5 seconds
+            animationDuration: 1500 + Math.random() * 1000,
             animationStartTime: 0,
             glowIntensity: 0,
             // Letter position metadata
@@ -88,7 +99,11 @@ export class StarManager {
 
     createInitiatorStar() {
         const x = this.width * (0.35 + Math.random() * 0.3);
-        const y = this.height * (0.3 + Math.random() * 0.25);
+        const y = this.height * (0.25 + Math.random() * 0.2);
+
+        // Larger initiator on mobile for easier tapping
+        const isMobile = this.width < 768;
+        const starSize = isMobile ? 3.5 : 2.5;
 
         this.initiatorStar = {
             id: -1,
@@ -98,8 +113,8 @@ export class StarManager {
             startY: y,
             targetX: x,
             targetY: y,
-            size: 2.5,
-            brightness: 0.6,
+            size: starSize,
+            brightness: 0.7,
             twinklePhase: 0,
             twinkleSpeed: 0.8,
             isActivated: false,
@@ -118,7 +133,11 @@ export class StarManager {
         const dy = clickY - this.initiatorStar.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        return dist < 30;
+        // Larger touch area on mobile
+        const isMobile = this.width < 768;
+        const hitRadius = isMobile ? 45 : 30;
+
+        return dist < hitRadius;
     }
 
     startExperience(currentTime) {
@@ -155,6 +174,42 @@ export class StarManager {
 
         // Build connection lines
         this.buildConnectionLines(positions);
+
+        // Calculate ANSAM bounds for hearts animation
+        this.calculateAnsamBounds(positions);
+    }
+
+    calculateAnsamBounds(positions) {
+        // ANSAM starts after HAPPY and BIRTHDAY
+        const happyCount = getWordStarCount('HAPPY');
+        const birthdayCount = getWordStarCount('BIRTHDAY');
+        const ansamStartIndex = happyCount + birthdayCount;
+
+        const ansamPositions = positions.filter(p => p.letterStartIndex >= ansamStartIndex);
+
+        if (ansamPositions.length === 0) {
+            this.ansamBounds = null;
+            return;
+        }
+
+        let minX = Infinity, maxX = -Infinity;
+        let minY = Infinity, maxY = -Infinity;
+
+        for (const pos of ansamPositions) {
+            minX = Math.min(minX, pos.x);
+            maxX = Math.max(maxX, pos.x);
+            minY = Math.min(minY, pos.y);
+            maxY = Math.max(maxY, pos.y);
+        }
+
+        // Add padding around the word
+        const padding = 40;
+        this.ansamBounds = {
+            x: minX - padding,
+            y: minY - padding,
+            width: (maxX - minX) + padding * 2,
+            height: (maxY - minY) + padding * 2
+        };
     }
 
     buildConnectionLines(positions) {
@@ -340,6 +395,10 @@ export class StarManager {
 
     getLinesFadeIn() {
         return this.linesFadeIn;
+    }
+
+    getAnsamBounds() {
+        return this.ansamBounds;
     }
 
     isComplete() {
