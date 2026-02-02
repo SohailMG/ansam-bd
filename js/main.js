@@ -12,6 +12,7 @@ class NightSkyExperience {
         this.starManager = null;
 
         this.hasStarted = false;
+        this.isDraggingPoem = false;
 
         this.init();
     }
@@ -31,13 +32,19 @@ class NightSkyExperience {
             setTimeout(() => this.handleResize(), 100);
         });
 
-        // Handle clicks and touches
+        // Handle clicks and touches for initiator star
         this.canvas.addEventListener('click', (e) => this.handleInteraction(e));
-        this.canvas.addEventListener('touchend', (e) => this.handleTouch(e));
 
-        // Prevent default touch behaviors
-        this.canvas.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
-        this.canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+        // Mouse events for dragging poem stars
+        this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+        this.canvas.addEventListener('mouseleave', (e) => this.handleMouseUp(e));
+
+        // Touch events for dragging poem stars
+        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
 
         // Show hint after a moment
         setTimeout(() => {
@@ -48,8 +55,82 @@ class NightSkyExperience {
         this.render();
     }
 
-    handleTouch(e) {
+    // Mouse drag handlers
+    handleMouseDown(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Try to start dragging a poem star
+        if (this.renderer.startDrag(x, y)) {
+            this.isDraggingPoem = true;
+            this.canvas.style.cursor = 'grabbing';
+        }
+    }
+
+    handleMouseMove(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (this.isDraggingPoem) {
+            this.renderer.updateDrag(x, y);
+        } else {
+            // Update cursor if hovering over a poem star
+            const star = this.renderer.findPoemStarAt(x, y);
+            this.canvas.style.cursor = star ? 'grab' : 'default';
+        }
+    }
+
+    handleMouseUp(e) {
+        if (this.isDraggingPoem) {
+            this.isDraggingPoem = false;
+            this.renderer.endDrag();
+            this.canvas.style.cursor = 'default';
+        }
+    }
+
+    // Touch drag handlers
+    handleTouchStart(e) {
         e.preventDefault();
+        const touch = e.touches[0];
+        if (!touch) return;
+
+        const rect = this.canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+
+        // Try to start dragging a poem star
+        if (this.renderer.startDrag(x, y)) {
+            this.isDraggingPoem = true;
+        }
+    }
+
+    handleTouchMove(e) {
+        e.preventDefault();
+        if (!this.isDraggingPoem) return;
+
+        const touch = e.touches[0];
+        if (!touch) return;
+
+        const rect = this.canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+
+        this.renderer.updateDrag(x, y);
+    }
+
+    handleTouchEnd(e) {
+        e.preventDefault();
+
+        // If we were dragging, just end the drag
+        if (this.isDraggingPoem) {
+            this.isDraggingPoem = false;
+            this.renderer.endDrag();
+            return;
+        }
+
+        // Otherwise, check for initiator click (only if not started)
         if (this.hasStarted) return;
 
         const touch = e.changedTouches[0];
@@ -65,6 +146,8 @@ class NightSkyExperience {
     }
 
     handleInteraction(e) {
+        // Don't trigger if we just finished dragging
+        if (this.isDraggingPoem) return;
         if (this.hasStarted) return;
 
         const rect = this.canvas.getBoundingClientRect();

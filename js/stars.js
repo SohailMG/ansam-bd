@@ -154,6 +154,11 @@ export class StarManager {
         this.connectionLines = [];
         this.linesFadeIn = 0;
 
+        // Calculate word boundaries
+        const happyCount = getWordStarCount('HAPPY');
+        const birthdayCount = getWordStarCount('BIRTHDAY');
+        const ansamStartIndex = happyCount + birthdayCount;
+
         // Assign each star to a specific position (1:1 mapping)
         // Stars[i] will go to positions[i]
         for (let i = 0; i < positions.length && i < this.stars.length; i++) {
@@ -166,6 +171,15 @@ export class StarManager {
             star.charIndex = target.charIndex;
             star.pointIndex = target.pointIndex;
             star.letterStartIndex = target.letterStartIndex;
+
+            // Mark which word this star belongs to
+            if (i < happyCount) {
+                star.word = 'HAPPY';
+            } else if (i < happyCount + birthdayCount) {
+                star.word = 'BIRTHDAY';
+            } else {
+                star.word = 'ANSAM';
+            }
         }
 
         // Create activation queue in random order (controls WHEN stars activate, not WHERE they go)
