@@ -9,9 +9,8 @@ html, body {
     height: 100%;
     overflow: hidden;
     background: #000008;
-    font-family: 'Georgia', serif;
+    font-family: 'Lora', 'Georgia', serif;
     cursor: default;
-    /* Prevent pull-to-refresh and overscroll */
     overscroll-behavior: none;
     touch-action: none;
     -webkit-touch-callout: none;
@@ -26,53 +25,390 @@ html, body {
     width: 100%;
     height: 100%;
     touch-action: none;
+    z-index: 0;
 }
 
-.hint {
+#scene-container {
     position: fixed;
-    bottom: 40px;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+#scene-container > * {
+    pointer-events: none;
+}
+
+/* Shared scene transition */
+.scene-fade-in {
+    animation: sceneFadeIn 2s ease forwards;
+}
+
+@keyframes sceneFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Typewriter scene */
+.typewriter-scene {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding: 40px;
+}
+
+.typewriter-paper {
+    position: relative;
+    max-width: 560px;
+    width: 100%;
+    padding: 50px 45px;
+    background: linear-gradient(135deg, #f5f0e8 0%, #ede6d6 50%, #e8e0d0 100%);
+    border-radius: 2px;
+    box-shadow:
+        0 2px 20px rgba(0, 0, 0, 0.4),
+        0 0 60px rgba(0, 0, 0, 0.2),
+        inset 0 0 80px rgba(139, 119, 90, 0.08);
+    opacity: 0;
+    animation: paperAppear 3s ease 0.5s forwards;
+}
+
+.typewriter-paper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 28px,
+            rgba(180, 170, 155, 0.15) 28px,
+            rgba(180, 170, 155, 0.15) 29px
+        );
+    pointer-events: none;
+    border-radius: 2px;
+}
+
+@keyframes paperAppear {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.typewriter-text {
+    font-family: 'Amiri', 'Georgia', serif;
+    font-size: 1.15rem;
+    line-height: 2;
+    color: #2a2520;
+    direction: rtl;
+    text-align: right;
+    min-height: 120px;
+    white-space: pre-wrap;
+}
+
+.typewriter-text.ltr {
+    direction: ltr;
+    text-align: left;
+    font-family: 'Lora', 'Georgia', serif;
+}
+
+.typewriter-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.2em;
+    background: #2a2520;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: cursorBlink 1s step-end infinite;
+}
+
+@keyframes cursorBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.typewriter-date {
+    margin-top: 30px;
+    font-family: 'Lora', 'Georgia', serif;
+    font-size: 0.8rem;
+    color: rgba(42, 37, 32, 0.35);
+    text-align: right;
+    font-style: italic;
+}
+
+/* Candle scene */
+.candle-scene {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
+    height: 100%;
+    padding-bottom: 15vh;
+}
+
+.candle-message {
+    position: absolute;
+    top: 18%;
     left: 50%;
     transform: translateX(-50%);
-    color: rgba(255, 255, 255, 0.25);
-    font-size: 0.9rem;
-    letter-spacing: 0.2em;
+    font-family: 'Amiri', 'Georgia', serif;
+    font-size: 1.3rem;
+    line-height: 2;
+    color: rgba(255, 230, 180, 0);
+    text-align: center;
+    direction: rtl;
+    white-space: pre-wrap;
+    transition: color 4s ease;
+    max-width: 80%;
+}
+
+.candle-message.ltr {
+    direction: ltr;
+    font-family: 'Lora', 'Georgia', serif;
+}
+
+.candle-message.visible {
+    color: rgba(255, 230, 180, 0.7);
+}
+
+/* Moon & Clouds scene */
+.moon-scene {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.moon-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Amiri', 'Georgia', serif;
+    font-size: 1.4rem;
+    line-height: 2.2;
+    color: rgba(220, 230, 255, 0.8);
+    text-align: center;
+    direction: rtl;
+    white-space: pre-wrap;
+    max-width: 70%;
+    text-shadow: 0 0 30px rgba(200, 220, 255, 0.3);
+}
+
+.moon-message.ltr {
+    direction: ltr;
+    font-family: 'Lora', 'Georgia', serif;
+}
+
+/* Book page scene */
+.book-scene {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding: 30px;
+}
+
+.book-page {
+    position: relative;
+    max-width: 520px;
+    width: 100%;
+    padding: 55px 50px;
+    background: linear-gradient(145deg, #f8f4ec 0%, #f0e8d8 40%, #e8dcc8 100%);
+    border-radius: 3px 12px 12px 3px;
+    box-shadow:
+        -4px 0 8px rgba(0,0,0,0.1),
+        0 2px 25px rgba(0,0,0,0.35),
+        inset -2px 0 5px rgba(139,119,90,0.1);
+    opacity: 0;
+    animation: bookAppear 2.5s ease 0.5s forwards;
+}
+
+.book-page::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10%;
+    bottom: 10%;
+    width: 1px;
+    background: rgba(180, 160, 130, 0.2);
+}
+
+@keyframes bookAppear {
+    from { opacity: 0; transform: scale(0.97); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.book-passage {
+    font-family: 'Amiri', 'Georgia', serif;
+    font-size: 1.15rem;
+    line-height: 2.2;
+    color: #3a3530;
+    direction: rtl;
+    text-align: right;
+    white-space: pre-wrap;
+    position: relative;
+}
+
+.book-passage.ltr {
+    direction: ltr;
+    text-align: left;
+    font-family: 'Lora', 'Georgia', serif;
+}
+
+.book-highlight {
+    background: linear-gradient(180deg, transparent 55%, rgba(255, 220, 120, 0.25) 55%, rgba(255, 220, 120, 0.25) 90%, transparent 90%);
+    padding: 0 3px;
+}
+
+.book-annotation {
+    position: absolute;
+    bottom: -35px;
+    right: 15px;
+    font-family: 'Amiri', serif;
+    font-size: 0.85rem;
+    font-style: italic;
+    color: rgba(120, 90, 60, 0.5);
+    transform: rotate(-2deg);
+    opacity: 0;
+    animation: annotationAppear 2s ease 4s forwards;
+}
+
+.book-annotation.ltr {
+    font-family: 'Lora', serif;
+    right: auto;
+    left: 15px;
+}
+
+@keyframes annotationAppear {
+    from { opacity: 0; transform: rotate(-2deg) translateY(5px); }
+    to { opacity: 1; transform: rotate(-2deg) translateY(0); }
+}
+
+/* Paper lantern scene */
+.lantern-scene {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.lantern-hint {
+    position: fixed;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Amiri', serif;
+    font-size: 0.85rem;
+    color: rgba(255, 200, 120, 0.4);
+    letter-spacing: 0.15em;
     opacity: 0;
     transition: opacity 3s ease;
     pointer-events: none;
-    z-index: 10;
-    text-align: center;
-    padding: 0 20px;
 }
 
-.hint.visible {
+.lantern-hint.visible {
     opacity: 1;
 }
 
-.hint.fade-out {
+.lantern-hint.fade-out {
+    opacity: 0;
+    transition: opacity 2s ease;
+}
+
+/* Dandelion scene */
+.dandelion-scene {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.dandelion-hint {
+    position: fixed;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Lora', serif;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 0.15em;
+    opacity: 0;
+    transition: opacity 3s ease;
+    pointer-events: none;
+}
+
+.dandelion-hint.visible {
+    opacity: 1;
+}
+
+.dandelion-hint.fade-out {
     opacity: 0;
     transition: opacity 2s ease;
 }
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
-    .hint {
-        bottom: 30px;
-        font-size: 0.8rem;
-        letter-spacing: 0.15em;
+    .typewriter-paper {
+        padding: 35px 30px;
+        margin: 20px;
+    }
+
+    .typewriter-text {
+        font-size: 1rem;
+    }
+
+    .book-page {
+        padding: 40px 35px;
+        margin: 15px;
+    }
+
+    .book-passage {
+        font-size: 1rem;
+    }
+
+    .candle-message,
+    .firefly-message {
+        font-size: 1.1rem;
+    }
+
+    .moon-message {
+        font-size: 1.15rem;
+        max-width: 85%;
     }
 }
 
 @media (max-width: 480px) {
-    .hint {
-        bottom: 25px;
-        font-size: 0.75rem;
+    .typewriter-paper {
+        padding: 28px 22px;
     }
-}
 
-/* Landscape mobile */
-@media (max-height: 500px) {
-    .hint {
-        bottom: 15px;
-        font-size: 0.7rem;
+    .typewriter-text {
+        font-size: 0.9rem;
+    }
+
+    .book-page {
+        padding: 30px 25px;
+    }
+
+    .book-passage {
+        font-size: 0.9rem;
+    }
+
+    .candle-message,
+    .firefly-message {
+        font-size: 0.95rem;
+        max-width: 90%;
+    }
+
+    .moon-message {
+        font-size: 1rem;
+        max-width: 90%;
     }
 }
