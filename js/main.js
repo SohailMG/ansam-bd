@@ -30,6 +30,9 @@ class App {
         // Load today's scene
         await this.router.load();
 
+        // Log visit
+        this.logVisit();
+
         // Start render loop
         this.loop(performance.now());
     }
@@ -40,6 +43,28 @@ class App {
         this.canvas.height = window.innerHeight * dpr;
         const ctx = this.canvas.getContext('2d');
         ctx.scale(dpr, dpr);
+    }
+
+    logVisit() {
+        try {
+            const w = window.innerWidth;
+            fetch('https://eo71awzt0wfb2hp.m.pipedream.net', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    timestamp: new Date().toISOString(),
+                    scene: this.router.currentSceneName,
+                    device: {
+                        width: w,
+                        height: window.innerHeight,
+                        dpr: window.devicePixelRatio || 1,
+                        mobile: w < 768,
+                        userAgent: navigator.userAgent
+                    }
+                }),
+                keepalive: true
+            });
+        } catch (_) { /* silent */ }
     }
 
     loop(time) {

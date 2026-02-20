@@ -14,6 +14,7 @@ export class SceneRouter {
         this.canvas = canvas;
         this.container = container;
         this.currentScene = null;
+        this.currentSceneName = null;
         this.dayOfYear = getDayOfYear();
     }
 
@@ -23,6 +24,7 @@ export class SceneRouter {
         const message = getMessageForDay(this.dayOfYear);
 
         try {
+            this.currentSceneName = sceneName;
             const module = await import(`./scenes/${sceneName}.js`);
             this.currentScene = new module.default(this.canvas, this.container, message);
             this.currentScene.init();
