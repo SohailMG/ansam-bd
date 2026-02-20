@@ -2,6 +2,7 @@
 
 import { StarManager, Phase } from './stars.js';
 import { Renderer } from './renderer.js';
+import { initGate } from '../../js/gate.js';
 
 class NightSkyExperience {
     constructor() {
@@ -196,7 +197,9 @@ class NightSkyExperience {
     }
 }
 
-// Start the experience when DOM is ready
+// Start the experience when DOM is ready, after gate is passed
 document.addEventListener('DOMContentLoaded', () => {
-    new NightSkyExperience();
+    initGate(() => {
+        new NightSkyExperience();
+    });
 });

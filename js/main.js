@@ -1,6 +1,7 @@
 // Main entry point — loads the daily scene
 
 import { SceneRouter } from './scene-router.js';
+import { initGate } from './gate.js';
 
 class App {
     constructor() {
@@ -75,5 +76,7 @@ class App {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    new App();
+    initGate(() => {
+        new App();
+    });
 });
