@@ -192,13 +192,14 @@ export default class CandleScene {
         const candle = this.getCandlePosition();
         const isMobile = window.innerWidth < 768;
 
-        // Check if tap is near the candle wick/top area
-        const dx = x - candle.cx;
-        const dy = y - candle.candleTop;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const hitRadius = isMobile ? 70 : 50;
+        // Generous hit zone covering the entire candle body + padding
+        const pad = isMobile ? 40 : 30;
+        const hitLeft = candle.cx - candle.candleWidth / 2 - pad;
+        const hitRight = candle.cx + candle.candleWidth / 2 + pad;
+        const hitTop = candle.candleTop - 60; // Above wick
+        const hitBottom = candle.candleBottom + pad;
 
-        if (dist < hitRadius) {
+        if (x >= hitLeft && x <= hitRight && y >= hitTop && y <= hitBottom) {
             this.lit = true;
             this.igniteTime = performance.now();
             this.hintDismissed = true;
