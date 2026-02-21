@@ -1,34 +1,15 @@
 // Typewriter Letter Scene
-// A personal letter types itself out on aged paper, letter by letter.
-// Randomly picks from a mix of Arabic and English letters each visit.
+// Cycles through letters, typing them out one by one with pauses.
 
 export default class TypewriterScene {
-    constructor(canvas, container, message) {
+    constructor(canvas, container) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.container = container;
 
-        // Personal letters — warm, slightly romantic, always starts with Ansami
+        // Letters pool
         this.letters = [
-            // --- English (phrases + words with meanings) ---
-            {
-                text: `Ansami,\n\nSonder.\n\nThe realization that every person around you has a life as vivid and complex as your own. But somehow, yours is the only one I want to know every detail of.`,
-                lang: 'en'
-            },
-            {
-                text: `Ansami,\n\nEunoia.\n\nA word that means beautiful thinking — a well-mind, a gentle spirit. It's the shortest English word that contains all five vowels.\n\nIt also happens to describe you perfectly.`,
-                lang: 'en'
-            },
-            {
-                text: `Ansami,\n\n"You are my golden hour".\n\nThat brief window of light right before the sun sets, when everything looks softer and warmer than it really is. Except with you, that's just how things are.`,
-                lang: 'en'
-            },
-
-            {
-                text: `Ansami,\n\nKomorebi.\n\nA Japanese word for sunlight filtering through leaves. There's no translation — it only exists as a feeling.\n\nThat's what your presence is like. Something there's no word for. Just light, reaching through.`,
-                lang: 'en'
-            },
-            // --- Arabic (poetry) ---
+ // --- Arabic (poetry) ---
             {
                 text: `أنسامي،\n\nما يَرجِعُ الطَرفُ عَنها حينَ أُبصِرُها\nحَتّى يَعودَ إِلَيها الطَرفُ مُشتاقا`,
                 lang: 'ar'
@@ -61,13 +42,32 @@ export default class TypewriterScene {
                 text: `أنسامي،\n\nوَأَراكِ في كُلِّ البِقاعِ كَأَنَّما\nلا جُرمَ في فَلَكي يَدورُ سِواكِ\n\nما عُدتُ أُبصِرُ في العَوالِمِ كُلِّها\nقَمَرًا سِواكِ فَجَلَّ مَن سَوّاكِ`,
                 lang: 'ar'
             },
+            // --- English (phrases + words with meanings) ---
+            {
+                text: `Ansami,\n\nSonder.\n\nThe realization that every person around you has a life as vivid and complex as your own. But somehow, yours is the only one I want to know every detail of.`,
+                lang: 'en'
+            },
+            {
+                text: `Ansami,\n\nEunoia.\n\nA word that means beautiful thinking — a well-mind, a gentle spirit. It's the shortest English word that contains all five vowels.\n\nIt also happens to describe you perfectly.`,
+                lang: 'en'
+            },
+            {
+                text: `Ansami,\n\n"You are my golden hour".\n\nThat brief window of light right before the sun sets, when everything looks softer and warmer than it really is. Except with you, that's just how things are.`,
+                lang: 'en'
+            },
+
+            {
+                text: `Ansami,\n\nKomorebi.\n\nA Japanese word for sunlight filtering through leaves. There's no translation — it only exists as a feeling.\n\nThat's what your presence is like. Something there's no word for. Just light, reaching through.`,
+                lang: 'en'
+            },
+           
 
         ];
-
-        // Randomly pick one each visit
-        this.message = this.letters[Math.floor(Math.random() * this.letters.length)];
-
+        // State for cycling
+        this.currentMessageIndex = 0;
+        this.message = this.letters[this.currentMessageIndex];
         this.charIndex = 0;
+
         this.lastCharTime = 0;
         this.typingSpeed = 35;
         this.pauseAfterNewline = 500;
@@ -75,6 +75,7 @@ export default class TypewriterScene {
         this.started = false;
         this.startTime = 0;
         this.startDelay = 3500;
+        this.delayBetweenMessages = 5000; // Delay before next message
 
         this.textEl = null;
         this.cursorEl = null;
@@ -91,17 +92,24 @@ export default class TypewriterScene {
 
         this.textEl = document.createElement('div');
         this.textEl.className = 'typewriter-text';
-        if (this.message.lang === 'en') {
-            this.textEl.classList.add('ltr');
-        }
+        if (this.message.lang === 'en') this.textEl.classList.add('ltr');
 
         this.cursorEl = document.createElement('span');
         this.cursorEl.className = 'typewriter-cursor';
-
         this.textEl.appendChild(this.cursorEl);
 
         const dateEl = document.createElement('div');
         dateEl.className = 'typewriter-date';
+        paper.appendChild(this.textEl);
+        paper.appendChild(dateEl);
+        scene.appendChild(paper);
+        this.container.appendChild(scene);
+
+        this.updateDate();
+    }
+
+    updateDate() {
+        const dateEl = this.container.querySelector('.typewriter-date');
         const now = new Date();
         if (this.message.lang === 'ar') {
             const arMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
@@ -113,11 +121,6 @@ export default class TypewriterScene {
                 'July', 'August', 'September', 'October', 'November', 'December'];
             dateEl.textContent = `${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
         }
-
-        paper.appendChild(this.textEl);
-        paper.appendChild(dateEl);
-        scene.appendChild(paper);
-        this.container.appendChild(scene);
     }
 
     drawBackground() {
@@ -148,29 +151,24 @@ export default class TypewriterScene {
         }
 
         if (this.charIndex >= this.message.text.length) {
-            if (this.cursorEl && time - this.lastCharTime > 2000) {
-                this.cursorEl.style.display = 'none';
+            // Message finished
+            if (time - this.lastCharTime > this.delayBetweenMessages) {
+                this.nextMessage();
             }
             return;
         }
 
         const nextChar = this.message.text[this.charIndex];
 
-        // Detect paragraph break (double newline)
         const isParagraphBreak = nextChar === '\n' &&
             this.charIndex + 1 < this.message.text.length &&
             this.message.text[this.charIndex + 1] === '\n';
 
         let delay = this.typingSpeed;
-        if (isParagraphBreak) {
-            delay = this.pauseAfterParagraph;
-        } else if (nextChar === '\n') {
-            delay = this.pauseAfterNewline;
-        } else if ('.?!—'.includes(nextChar) || nextChar === '।' || nextChar === '۔') {
-            delay = this.typingSpeed * 3;
-        } else if (',،'.includes(nextChar)) {
-            delay = this.typingSpeed * 1.5;
-        }
+        if (isParagraphBreak) delay = this.pauseAfterParagraph;
+        else if (nextChar === '\n') delay = this.pauseAfterNewline;
+        else if ('.?!—'.includes(nextChar)) delay = this.typingSpeed * 3;
+        else if (',،'.includes(nextChar)) delay = this.typingSpeed * 1.5;
 
         if (time - this.lastCharTime > delay) {
             const textNode = document.createTextNode(nextChar);
@@ -180,7 +178,23 @@ export default class TypewriterScene {
         }
     }
 
-    render(time) {
+    nextMessage() {
+        // Clear current text
+        this.textEl.innerHTML = '';
+        this.textEl.appendChild(this.cursorEl);
+
+        // Move to next message
+        this.currentMessageIndex = (this.currentMessageIndex + 1) % this.letters.length;
+        this.message = this.letters[this.currentMessageIndex];
+        if (this.message.lang === 'en') this.textEl.classList.add('ltr');
+        else this.textEl.classList.remove('ltr');
+
+        this.charIndex = 0;
+        this.lastCharTime = performance.now();
+        this.updateDate();
+    }
+
+    render() {
         // Background is static
     }
 
