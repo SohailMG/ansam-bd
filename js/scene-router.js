@@ -3,9 +3,9 @@
 import { getDayOfYear, getMessageForDay } from './messages.js';
 
 const SCENES = [
+    'moon-clouds',
     'typewriter',
     'paper-lanterns',
-    'moon-clouds',
     'candle',
 ];
 
