@@ -12,15 +12,7 @@ export default class TypewriterScene {
         this.letters = [
             // --- English (phrases + words with meanings) ---
             {
-                text: `Ansami,\n\nYou are my orange.\n\nSomeone who walked into my life unexpectedly and made everything brighter. You bring warmth when it's cold, laughter when it's quiet, and colour when the world feels grey.`,
-                lang: 'en'
-            },
-            {
                 text: `Ansami,\n\nSonder.\n\nThe realization that every person around you has a life as vivid and complex as your own. But somehow, yours is the only one I want to know every detail of.`,
-                lang: 'en'
-            },
-            {
-                text: `Ansami,\n\nYou are my 11:11.\n\nThe wish I never say out loud because I'm afraid saying it will break the spell. The one thing I'd ask for if the universe was listening.`,
                 lang: 'en'
             },
             {
@@ -28,17 +20,10 @@ export default class TypewriterScene {
                 lang: 'en'
             },
             {
-                text: `Ansami,\n\nYou are my golden hour.\n\nThat brief window of light right before the sun sets, when everything looks softer and warmer than it really is. Except with you, that's just how things are.`,
+                text: `Ansami,\n\n"You are my golden hour".\n\nThat brief window of light right before the sun sets, when everything looks softer and warmer than it really is. Except with you, that's just how things are.`,
                 lang: 'en'
             },
-            {
-                text: `Ansami,\n\nPhilophrosyne.\n\nAn ancient word for the kind of warmth that makes strangers feel like family. Kindness without motive. Gentleness without effort.\n\nSome people study it. You just do it.`,
-                lang: 'en'
-            },
-            {
-                text: `Ansami,\n\nYou are my stillness.\n\nNot the kind where nothing happens. The kind where everything finally stops rushing. Where the noise settles. Where I can just — be.`,
-                lang: 'en'
-            },
+
             {
                 text: `Ansami,\n\nKomorebi.\n\nA Japanese word for sunlight filtering through leaves. There's no translation — it only exists as a feeling.\n\nThat's what your presence is like. Something there's no word for. Just light, reaching through.`,
                 lang: 'en'
