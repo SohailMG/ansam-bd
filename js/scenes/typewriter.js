@@ -7,6 +7,12 @@ export default class TypewriterScene {
         this.ctx = canvas.getContext('2d');
         this.container = container;
 
+// Add these properties in your constructor:
+this.typingSpeed = 50;          // base speed for English letters (ms)
+this.pauseAfterNewline = 700;   // pause for \n
+this.pauseAfterParagraph = 1200; // pause for \n\n
+this.arabicTypingSpeed = 120;   // per Arabic chunk (ms)
+
         // Letters pool
         this.letters = [
  // --- Arabic (poetry) ---
@@ -63,11 +69,10 @@ export default class TypewriterScene {
            
 
         ];
-        // State for cycling
         this.currentMessageIndex = 0;
         this.message = this.letters[this.currentMessageIndex];
-        this.charIndex = 0;
 
+        this.charIndex = 0;
         this.lastCharTime = 0;
         this.typingSpeed = 35;
         this.pauseAfterNewline = 500;
@@ -75,50 +80,132 @@ export default class TypewriterScene {
         this.started = false;
         this.startTime = 0;
         this.startDelay = 3500;
-        this.delayBetweenMessages = 5000; // Delay before next message
+        this.delayBetweenMessages = 2000; // pause between messages
 
         this.textEl = null;
         this.cursorEl = null;
+
+        // Arabic chunking
+        this.arabicChunks = [];
     }
 
     init() {
-    this.drawBackground();
+        this.drawBackground();
 
-    const scene = document.createElement('div');
-    scene.className = 'typewriter-scene scene-fade-in';
+        const scene = document.createElement('div');
+        scene.className = 'typewriter-scene scene-fade-in';
 
-    const paper = document.createElement('div');
-    paper.className = 'typewriter-paper';
+        const paper = document.createElement('div');
+        paper.className = 'typewriter-paper';
 
-    this.textEl = document.createElement('div');
-    this.textEl.className = 'typewriter-text';
+        this.textEl = document.createElement('div');
+        this.textEl.className = 'typewriter-text';
 
-    // --- Set direction and class based on language ---
-    if (this.message.lang === 'en') {
-        this.textEl.classList.add('ltr');
-        this.textEl.removeAttribute('dir');
-    } else {
-        this.textEl.classList.remove('ltr');
-        this.textEl.setAttribute('dir', 'rtl');    // Ensures correct RTL on iOS
-        this.textEl.classList.add('rtl');          // Add CSS class for styling
-        // Optional: prepend zero-width RTL mark for iOS Safari
-        this.message.text = '\u200F' + this.message.text;
+        this.cursorEl = document.createElement('span');
+        this.cursorEl.className = 'typewriter-cursor';
+        this.textEl.appendChild(this.cursorEl);
+
+        const dateEl = document.createElement('div');
+        dateEl.className = 'typewriter-date';
+
+        paper.appendChild(this.textEl);
+        paper.appendChild(dateEl);
+        scene.appendChild(paper);
+        this.container.appendChild(scene);
+
+        this.prepareMessage(this.message);
+        this.updateDate();
     }
 
-    this.cursorEl = document.createElement('span');
-    this.cursorEl.className = 'typewriter-cursor';
-    this.textEl.appendChild(this.cursorEl);
+    prepareMessage(message) {
+        // Clear text
+        this.textEl.innerHTML = '';
+        this.textEl.appendChild(this.cursorEl);
 
-    const dateEl = document.createElement('div');
-    dateEl.className = 'typewriter-date';
+        if (message.lang === 'en') {
+            this.textEl.classList.add('ltr');
+            this.textEl.classList.remove('rtl');
+            this.textEl.removeAttribute('dir');
+        } else {
+            this.textEl.classList.remove('ltr');
+            this.textEl.classList.add('rtl');
+            this.textEl.setAttribute('dir', 'rtl');
+            this.textEl.style.unicodeBidi = 'plaintext';
+            // prepend zero-width mark for iOS Safari
+            message.text = '\u200F' + message.text;
+            // split into chunks for typewriter effect
+            this.arabicChunks = message.text.match(/.{1,4}/gs) || [];
+        }
 
-    paper.appendChild(this.textEl);
-    paper.appendChild(dateEl);
-    scene.appendChild(paper);
-    this.container.appendChild(scene);
+        this.charIndex = 0;
+        this.lastCharTime = performance.now();
+    }
 
-    this.updateDate();
+    update(time) {
+    if (!this.started) {
+        if (!this.startTime) this.startTime = time;
+        if (time - this.startTime > this.startDelay) {
+            this.started = true;
+            this.lastCharTime = time;
+        }
+        return;
+    }
+
+    if (this.message.lang === 'ar') {
+        // Arabic typing in chunks
+        if (this.charIndex < this.arabicChunks.length) {
+            if (time - this.lastCharTime > this.arabicTypingSpeed) {
+                const chunkNode = document.createTextNode(this.arabicChunks[this.charIndex]);
+                this.textEl.insertBefore(chunkNode, this.cursorEl);
+                this.charIndex++;
+                this.lastCharTime = time;
+            }
+        } else if (time - this.lastCharTime > this.delayBetweenMessages) {
+            this.nextMessage();
+        }
+    } else {
+        // English typing letter by letter
+        if (this.charIndex >= this.message.text.length) {
+            if (time - this.lastCharTime > this.delayBetweenMessages) {
+                this.nextMessage();
+            }
+            return;
+        }
+
+        const nextChar = this.message.text[this.charIndex];
+
+        // Paragraph or newline detection
+        const isParagraphBreak = nextChar === '\n' &&
+            this.charIndex + 1 < this.message.text.length &&
+            this.message.text[this.charIndex + 1] === '\n';
+
+        let delay = this.typingSpeed;
+        if (isParagraphBreak) delay = this.pauseAfterParagraph;
+        else if (nextChar === '\n') delay = this.pauseAfterNewline;
+        else if ('.?!—'.includes(nextChar) || nextChar === '।' || nextChar === '۔') {
+            delay = this.typingSpeed * 3;
+        } else if (',،'.includes(nextChar)) {
+            delay = this.typingSpeed * 1.5;
+        }
+
+        // Add slight random variation for natural feel
+        delay += Math.random() * 30;
+
+        if (time - this.lastCharTime > delay) {
+            const textNode = document.createTextNode(nextChar);
+            this.textEl.insertBefore(textNode, this.cursorEl);
+            this.charIndex++;
+            this.lastCharTime = time;
+        }
+    }
 }
+
+    nextMessage() {
+        this.currentMessageIndex = (this.currentMessageIndex + 1) % this.letters.length;
+        this.message = this.letters[this.currentMessageIndex];
+        this.prepareMessage(this.message);
+        this.updateDate();
+    }
 
     updateDate() {
         const dateEl = this.container.querySelector('.typewriter-date');
@@ -132,6 +219,7 @@ export default class TypewriterScene {
             const months = ['January', 'February', 'March', 'April', 'May', 'June',
                 'July', 'August', 'September', 'October', 'November', 'December'];
             dateEl.textContent = `${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+            dateEl.style.textAlign = 'left';
         }
     }
 
@@ -150,60 +238,6 @@ export default class TypewriterScene {
 
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, w, h);
-    }
-
-    update(time) {
-        if (!this.started) {
-            if (!this.startTime) this.startTime = time;
-            if (time - this.startTime > this.startDelay) {
-                this.started = true;
-                this.lastCharTime = time;
-            }
-            return;
-        }
-
-        if (this.charIndex >= this.message.text.length) {
-            // Message finished
-            if (time - this.lastCharTime > this.delayBetweenMessages) {
-                this.nextMessage();
-            }
-            return;
-        }
-
-        const nextChar = this.message.text[this.charIndex];
-
-        const isParagraphBreak = nextChar === '\n' &&
-            this.charIndex + 1 < this.message.text.length &&
-            this.message.text[this.charIndex + 1] === '\n';
-
-        let delay = this.typingSpeed;
-        if (isParagraphBreak) delay = this.pauseAfterParagraph;
-        else if (nextChar === '\n') delay = this.pauseAfterNewline;
-        else if ('.?!—'.includes(nextChar)) delay = this.typingSpeed * 3;
-        else if (',،'.includes(nextChar)) delay = this.typingSpeed * 1.5;
-
-        if (time - this.lastCharTime > delay) {
-            const textNode = document.createTextNode(nextChar);
-            this.textEl.insertBefore(textNode, this.cursorEl);
-            this.charIndex++;
-            this.lastCharTime = time;
-        }
-    }
-
-    nextMessage() {
-        // Clear current text
-        this.textEl.innerHTML = '';
-        this.textEl.appendChild(this.cursorEl);
-
-        // Move to next message
-        this.currentMessageIndex = (this.currentMessageIndex + 1) % this.letters.length;
-        this.message = this.letters[this.currentMessageIndex];
-        if (this.message.lang === 'en') this.textEl.classList.add('ltr');
-        else this.textEl.classList.remove('ltr');
-
-        this.charIndex = 0;
-        this.lastCharTime = performance.now();
-        this.updateDate();
     }
 
     render() {
