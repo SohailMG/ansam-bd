@@ -4,9 +4,9 @@ import { getDayOfYear, getMessageForDay } from './messages.js';
 
 const SCENES = [
     'typewriter',
-    'moon-clouds',
-    'paper-lanterns',
-    'candle',
+    // 'moon-clouds',
+    // 'paper-lanterns',
+    // 'candle',
 ];
 
 export class SceneRouter {
