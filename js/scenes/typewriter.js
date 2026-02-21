@@ -82,31 +82,43 @@ export default class TypewriterScene {
     }
 
     init() {
-        this.drawBackground();
+    this.drawBackground();
 
-        const scene = document.createElement('div');
-        scene.className = 'typewriter-scene scene-fade-in';
+    const scene = document.createElement('div');
+    scene.className = 'typewriter-scene scene-fade-in';
 
-        const paper = document.createElement('div');
-        paper.className = 'typewriter-paper';
+    const paper = document.createElement('div');
+    paper.className = 'typewriter-paper';
 
-        this.textEl = document.createElement('div');
-        this.textEl.className = 'typewriter-text';
-        if (this.message.lang === 'en') this.textEl.classList.add('ltr');
+    this.textEl = document.createElement('div');
+    this.textEl.className = 'typewriter-text';
 
-        this.cursorEl = document.createElement('span');
-        this.cursorEl.className = 'typewriter-cursor';
-        this.textEl.appendChild(this.cursorEl);
-
-        const dateEl = document.createElement('div');
-        dateEl.className = 'typewriter-date';
-        paper.appendChild(this.textEl);
-        paper.appendChild(dateEl);
-        scene.appendChild(paper);
-        this.container.appendChild(scene);
-
-        this.updateDate();
+    // --- Set direction and class based on language ---
+    if (this.message.lang === 'en') {
+        this.textEl.classList.add('ltr');
+        this.textEl.removeAttribute('dir');
+    } else {
+        this.textEl.classList.remove('ltr');
+        this.textEl.setAttribute('dir', 'rtl');    // Ensures correct RTL on iOS
+        this.textEl.classList.add('rtl');          // Add CSS class for styling
+        // Optional: prepend zero-width RTL mark for iOS Safari
+        this.message.text = '\u200F' + this.message.text;
     }
+
+    this.cursorEl = document.createElement('span');
+    this.cursorEl.className = 'typewriter-cursor';
+    this.textEl.appendChild(this.cursorEl);
+
+    const dateEl = document.createElement('div');
+    dateEl.className = 'typewriter-date';
+
+    paper.appendChild(this.textEl);
+    paper.appendChild(dateEl);
+    scene.appendChild(paper);
+    this.container.appendChild(scene);
+
+    this.updateDate();
+}
 
     updateDate() {
         const dateEl = this.container.querySelector('.typewriter-date');
