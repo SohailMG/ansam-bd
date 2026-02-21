@@ -69,24 +69,27 @@ this.arabicTypingSpeed = 120;   // per Arabic chunk (ms)
            
 
         ];
+        // Message cycling state
         this.currentMessageIndex = 0;
         this.message = this.letters[this.currentMessageIndex];
 
+        // Typing state
         this.charIndex = 0;
         this.lastCharTime = 0;
-        this.typingSpeed = 35;
-        this.pauseAfterNewline = 500;
-        this.pauseAfterParagraph = 900;
+        this.typingSpeed = 50;            // English letters ms
+        this.pauseAfterNewline = 700;
+        this.pauseAfterParagraph = 1200;
+        this.arabicTypingSpeed = 400;     // per word ms
+        this.delayBetweenMessages = 2000; // pause between messages
         this.started = false;
         this.startTime = 0;
         this.startDelay = 3500;
-        this.delayBetweenMessages = 2000; // pause between messages
 
         this.textEl = null;
         this.cursorEl = null;
 
-        // Arabic chunking
-        this.arabicChunks = [];
+        // Arabic tokens (words + newlines)
+        this.arabicTokens = [];
     }
 
     init() {
@@ -118,7 +121,7 @@ this.arabicTypingSpeed = 120;   // per Arabic chunk (ms)
     }
 
     prepareMessage(message) {
-        // Clear text
+        // Clear previous text
         this.textEl.innerHTML = '';
         this.textEl.appendChild(this.cursorEl);
 
@@ -131,10 +134,10 @@ this.arabicTypingSpeed = 120;   // per Arabic chunk (ms)
             this.textEl.classList.add('rtl');
             this.textEl.setAttribute('dir', 'rtl');
             this.textEl.style.unicodeBidi = 'plaintext';
-            // prepend zero-width mark for iOS Safari
+            // prepend RTL mark
             message.text = '\u200F' + message.text;
-            // split into chunks for typewriter effect
-            this.arabicChunks = message.text.match(/.{1,4}/gs) || [];
+            // split Arabic into words and preserve newlines
+            this.arabicTokens = message.text.match(/[^\s\n]+|\n/g) || [];
         }
 
         this.charIndex = 0;
@@ -142,63 +145,61 @@ this.arabicTypingSpeed = 120;   // per Arabic chunk (ms)
     }
 
     update(time) {
-    if (!this.started) {
-        if (!this.startTime) this.startTime = time;
-        if (time - this.startTime > this.startDelay) {
-            this.started = true;
-            this.lastCharTime = time;
-        }
-        return;
-    }
-
-    if (this.message.lang === 'ar') {
-        // Arabic typing in chunks
-        if (this.charIndex < this.arabicChunks.length) {
-            if (time - this.lastCharTime > this.arabicTypingSpeed) {
-                const chunkNode = document.createTextNode(this.arabicChunks[this.charIndex]);
-                this.textEl.insertBefore(chunkNode, this.cursorEl);
-                this.charIndex++;
+        if (!this.started) {
+            if (!this.startTime) this.startTime = time;
+            if (time - this.startTime > this.startDelay) {
+                this.started = true;
                 this.lastCharTime = time;
-            }
-        } else if (time - this.lastCharTime > this.delayBetweenMessages) {
-            this.nextMessage();
-        }
-    } else {
-        // English typing letter by letter
-        if (this.charIndex >= this.message.text.length) {
-            if (time - this.lastCharTime > this.delayBetweenMessages) {
-                this.nextMessage();
             }
             return;
         }
 
-        const nextChar = this.message.text[this.charIndex];
+        if (this.message.lang === 'ar') {
+            // Arabic: word-by-word + newline support
+            if (this.charIndex < this.arabicTokens.length) {
+                if (time - this.lastCharTime > this.arabicTypingSpeed) {
+                    const token = this.arabicTokens[this.charIndex];
+                    const textNode = document.createTextNode(token === '\n' ? '\n' : token + ' ');
+                    this.textEl.insertBefore(textNode, this.cursorEl);
+                    this.charIndex++;
+                    this.lastCharTime = time;
+                }
+            } else if (time - this.lastCharTime > this.delayBetweenMessages) {
+                this.nextMessage();
+            }
+        } else {
+            // English: letter-by-letter
+            if (this.charIndex >= this.message.text.length) {
+                if (time - this.lastCharTime > this.delayBetweenMessages) {
+                    this.nextMessage();
+                }
+                return;
+            }
 
-        // Paragraph or newline detection
-        const isParagraphBreak = nextChar === '\n' &&
-            this.charIndex + 1 < this.message.text.length &&
-            this.message.text[this.charIndex + 1] === '\n';
+            const nextChar = this.message.text[this.charIndex];
+            const isParagraphBreak = nextChar === '\n' &&
+                this.charIndex + 1 < this.message.text.length &&
+                this.message.text[this.charIndex + 1] === '\n';
 
-        let delay = this.typingSpeed;
-        if (isParagraphBreak) delay = this.pauseAfterParagraph;
-        else if (nextChar === '\n') delay = this.pauseAfterNewline;
-        else if ('.?!—'.includes(nextChar) || nextChar === '।' || nextChar === '۔') {
-            delay = this.typingSpeed * 3;
-        } else if (',،'.includes(nextChar)) {
-            delay = this.typingSpeed * 1.5;
-        }
+            let delay = this.typingSpeed;
+            if (isParagraphBreak) delay = this.pauseAfterParagraph;
+            else if (nextChar === '\n') delay = this.pauseAfterNewline;
+            else if ('.?!—'.includes(nextChar) || nextChar === '।' || nextChar === '۔') {
+                delay = this.typingSpeed * 3;
+            } else if (',،'.includes(nextChar)) {
+                delay = this.typingSpeed * 1.5;
+            }
 
-        // Add slight random variation for natural feel
-        delay += Math.random() * 30;
+            delay += Math.random() * 30;
 
-        if (time - this.lastCharTime > delay) {
-            const textNode = document.createTextNode(nextChar);
-            this.textEl.insertBefore(textNode, this.cursorEl);
-            this.charIndex++;
-            this.lastCharTime = time;
+            if (time - this.lastCharTime > delay) {
+                const textNode = document.createTextNode(nextChar);
+                this.textEl.insertBefore(textNode, this.cursorEl);
+                this.charIndex++;
+                this.lastCharTime = time;
+            }
         }
     }
-}
 
     nextMessage() {
         this.currentMessageIndex = (this.currentMessageIndex + 1) % this.letters.length;
