@@ -1255,17 +1255,28 @@ export default class GiftBoxScene {
             }
         }
 
-        // Ribbon emoji on top of the A
+        // Ribbon emoji on top of the A (drawn as image for iOS compatibility)
         if (this.ribbonOpacity > 0 && this.formationStarted) {
+            if (!this._ribbonImg) {
+                // Pre-render emoji to an offscreen canvas, then convert to image.
+                // iOS Safari doesn't reliably render emoji via fillText on canvas.
+                const size = 64;
+                const offscreen = document.createElement('canvas');
+                offscreen.width = size;
+                offscreen.height = size;
+                const offCtx = offscreen.getContext('2d');
+                offCtx.font = `${size - 8}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+                offCtx.textAlign = 'center';
+                offCtx.textBaseline = 'middle';
+                offCtx.fillText('\uD83C\uDF80', size / 2, size / 2);
+                this._ribbonImg = offscreen;
+            }
             ctx.save();
             ctx.globalAlpha = this.ribbonOpacity;
             const ribbonSize = isSmall ? 28 : isMobile ? 34 : 38;
-            ctx.font = `${ribbonSize}px serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
             ctx.translate(this.letterTopX + ribbonSize * 0.1, this.letterTopY - ribbonSize * 0.3);
             ctx.rotate(0.2);
-            ctx.fillText('\uD83C\uDF80', 0, 0);
+            ctx.drawImage(this._ribbonImg, -ribbonSize / 2, -ribbonSize / 2, ribbonSize, ribbonSize);
             ctx.restore();
         }
 
