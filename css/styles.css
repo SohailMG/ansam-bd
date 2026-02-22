@@ -353,6 +353,36 @@ html, body {
     transition: opacity 2s ease;
 }
 
+/* Gift box scene */
+.gift-scene {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.gift-hint {
+    position: fixed;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Lora', serif;
+    font-size: 0.85rem;
+    color: rgba(135, 206, 235, 0.35);
+    letter-spacing: 0.15em;
+    opacity: 0;
+    transition: opacity 3s ease;
+    pointer-events: none;
+}
+
+.gift-hint.visible {
+    opacity: 1;
+}
+
+.gift-hint.fade-out {
+    opacity: 0;
+    transition: opacity 2s ease;
+}
+
 /* Mobile adjustments */
 @media (max-width: 768px) {
     .typewriter-paper {

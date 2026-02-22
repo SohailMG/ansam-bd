@@ -93,6 +93,13 @@ this.arabicTypingSpeed = 120;   // per Arabic chunk (ms)
     }
 
     init() {
+        // Shuffle letters for a random order each time (Fisher-Yates)
+        for (let i = this.letters.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.letters[i], this.letters[j]] = [this.letters[j], this.letters[i]];
+        }
+        this.message = this.letters[0];
+
         this.drawBackground();
 
         const scene = document.createElement('div');
